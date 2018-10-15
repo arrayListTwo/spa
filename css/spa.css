@@ -1,0 +1,80 @@
+/*
+spa.css
+Root namespace styles
+ */
+
+/**Begin reset 重置大多数选择器*/
+* {
+    margin: 0;
+    padding: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+    margin-bottom: 10px;
+}
+
+/**End reset*/
+
+/** Begin standard selector 修改标准选择器 */
+body {
+    font: 13px 'Trebuchet MS', Verdana, Helvetica, Arial, sans-serif;
+    color: #444444;
+    background-color: #888888;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:link, a:visited {
+    color: inherit;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+strong {
+    font-weight: 800;
+    color: #000000;
+}
+
+/** End standard selectors */
+
+/** Begin spa namespace selector 定义选择器的名字空间，通常使用根名字作为元素选择器*/
+#spa {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    bottom: 8px;
+    right: 8px;
+    min-height: 500px;
+    min-width: 500px;
+    overflow: hidden;
+    background-color: #fff;
+    -webkit-border-radius: 0 8px 0 8px;
+    -moz-border-radius: 0 8px 0 8px;
+    border-radius: 0 8px 0 8px;
+}
+
+/** End spa namespace selector */
+
+/** Begin utility selector 为其他所有模块提供通用选择器。它们以spa-x-作为前缀 */
+.spa-x-select {
+}
+
+.spa-x-clearfloat {
+    height: 0;
+!important;
+    float: none;
+!important;
+    visibility: hidden;
+!important;
+    clear: both;
+!important;
+}
+
+/** End utility selectors */
