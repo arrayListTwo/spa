@@ -1,4 +1,3 @@
-
 /*
  * spa.shell.js
  * Shell module for SPA
@@ -15,8 +14,7 @@ spa.shell = (function () {
   var
     configMap = { // 静态配置值
       anchor_schema_map: {
-      	
-        chat  : {open: true,closed: true}
+        chat: {opened: true, closed: true}
       },
       main_html: String()
         + '<!--LOGO 账户设置 搜索框-->'
@@ -32,8 +30,6 @@ spa.shell = (function () {
         + '    </div>'
         + '    <!--footer容器-->'
         + '    <div class="spa-shell-foot"></div>'
-        + '    <!--chat容器-->'
-        + '    <div class="spa-shell-chat"></div>'
         + '    <!--modal容器-->'
         + '    <div class="spa-shell-modal"></div>',
       chat_extend_time: 1000,
@@ -44,17 +40,15 @@ spa.shell = (function () {
       chat_retracted_title: 'Click to extend'
     },
     stateMap = {// 共享的动态信息
-      $container: null,
-      anchor_map: {}, // 将当前锚的值保存在表示模块状态的映射中
-      is_chat_retracted: true
+      anchor_map: {}
     },
     jqueryMap = {}, // jQuery缓存
     copyAnchorMap, setJqueryMap, toggleChat,
     changeAnchorPart, onHashchange,
-    onClickChat, initModule;
+    onClickChat, setChatAnchor, initModule;
 
   // --------------Begin utility methods 所有的私有工具方法聚集区块里面，这些方法不会操作DOM，不需要浏览器就能运行--------------
-  // Returns copy of stored anchor map; minamizes overhead
+  // Returns copy of stored anchor map; minimizes overhead
   copyAnchorMap = function () {
     return $.extend(true, {}, stateMap.anchor_map);
   };
@@ -66,7 +60,6 @@ spa.shell = (function () {
     var $container = stateMap.$container;
     jqueryMap = {
       $container: $container, // 页面容器缓存
-      $chat: $container.find('.spa-shell-chat') // 将聊天滑块的jQuery集合缓存
     };
   };
   // End DOM method / setJqueryMap /
@@ -84,6 +77,7 @@ spa.shell = (function () {
   // Returns : boolean
   // * true - slider animation activated
   // * false - slider animation not activated
+  /* 移除toggleChat方法
   toggleChat = function (do_extend, callback) {
     var
       px_chat_ht = jqueryMap.$chat.height(),
@@ -128,7 +122,7 @@ spa.shell = (function () {
     );
     return true;
     // End retract chat slider
-  };
+  };*/
   // Begin DOM method /changeAnchorPart/
   // Purpose : change part of the URI anchor compoent
   // Arguments:
@@ -195,13 +189,12 @@ spa.shell = (function () {
   // Actions :
   // * Parses the URI anchor component
   // * Compares proposed application state with current
-  // * Adjust the application only where proposed state differs for existing
+  // * Adjust the application only where proposed state differs for existing and is allowed by anchor schema
   onHashchange = function (event) {
     var
-      anchor_map_previous = copyAnchorMap(),
-      anchor_map_proposed,
       _s_chat_previous, _s_chat_proposed,
-      s_chat_proposed;
+      s_chat_proposed, anchor_map_proposed,
+      is_ok = true, anchor_map_previous = copyAnchorMap();
     // sttempt to parse anchor
     try {
       anchor_map_proposed = $.uriAnchor.makeAnchorMap();
@@ -217,53 +210,104 @@ spa.shell = (function () {
     if (!anchor_map_previous || _s_chat_previous !== _s_chat_proposed) {
       s_chat_proposed = anchor_map_proposed.chat;
       switch (s_chat_proposed) {
-        case 'open':
-          toggleChat(true);
+        case 'opened':
+          is_ok = spa.chat.setSliderPosition('opened');
           break;
         case 'closed':
-          toggleChat(false);
+          is_ok = spa.chat.setSliderPosition('closed');
           break;
         default:
-            toggleChat(false);
-            delete anchor_map_proposed.chat;
-            $.uriAnchor.setAnchor(anchor_map_proposed, null, true);
+          spa.chat.setSliderPosition('closed');
+          delete anchor_map_proposed.chat;
+          $.uriAnchor.setAnchor(anchor_map_proposed, null, true);
       }
     }
     // End adjust chat component if changed
+    // Begin revert anchor if slider change denied
+    /*当setSliderPosition返回false值时(意味着更改位置的请求被拒绝)，
+    要么回退到之前位置的锚值，或者如果之前的不存在，则使用默认的*/
+    if (!is_ok) {
+      if (anchor_map_previous) {
+        $.uriAnchor.setAnchor(anchor_map_previous, null, true);
+        stateMap.anchor_map = anchor_map_previous;
+      } else {
+        delete anchor_map_proposed.chat;
+        $.uriAnchor.setAnchor(anchor_map_proposed, null, true);
+      }
+    }
+    // End revert anchor if slider change denied
     return false;
   };
   // End Event handler /onHashchange/
   // Begin Event handler /onClickChat/
-  onClickChat = function ( event ) {
-    /*if (toggleChat(stateMap.is_chat_retracted)) {
+  /*onClickChat = function (event) {
+    /!*if (toggleChat(stateMap.is_chat_retracted)) {
       // 改变URI
       $.uriAnchor.setAnchor({
         chat: (stateMap.is_chat_retracted ? 'open' : 'close')
       });
-    }*/
+    }*!/
     changeAnchorPart({
       chat: (stateMap.is_chat_retracted ? 'open' : 'closed')
     });
     return false;
-  };
+  };*/
   // --------------End event handlers--------------
+
+  // --------------Begin callbacks--------------
+  // Begin callback method /setChatAnchor/
+  // Example : setChatAnchor('closed')
+  // Purpose :　Change the chat component of the anchor
+  // Arguments:
+  //  * position_type - may be 'closed' or 'opened'
+  // Action :
+  // Changes the URI anchor parameter 'chat' to the requested value if possible.
+  // Returns:
+  //  * true - requested anchor part was updated
+  //  * false - requested anchor part was not updated
+  // Throws: none
+  //
+  setChatAnchor = function (position_type) {
+    return changeAnchorPart({chat: position_type});
+  };
+  // End callback method /setChatAnchor/
+  // --------------End callbacks--------------
 
   // --------------Begin public methods 公开方法聚集在区块里面，模块公开方法部分--------------
   // Begin public method /initModule/
+  // Example : spa.shell.initModule($('#app_div_id'));
+  // Purpose :
+  // Directs the shell to offer its capability to the user
+  // Arguments:
+  //  * $container(example: $('#app_div_id')).
+  //    A jQuery collection that should repersent a single DOM container
+  // Action :
+  // Populates $container with the shll of the UI and then configures and initializes feature modules;
+  // The shell is also reponsible for browser-wide issues
+  // such as URI anchor and cookie management
+  // Returns : none
+  // Throws : none
   initModule = function ($container) {
     // load HTML and map jQuery collections
     stateMap.$container = $container;
     $container.html(configMap.main_html);
     setJqueryMap();
     // initialize chat slider and bind click handler
-    stateMap.is_chat_retracted = true;
+    /*stateMap.is_chat_retracted = true;
     jqueryMap.$chat
       .attr('title', configMap.chat_retracted_title)
-      .click(onClickChat);
+      .click(onClickChat);*/
     // configure uriAnchor to use our schema
     $.uriAnchor.configModule({
       schema_map: configMap.anchor_schema_map
     });
+    // configure and initialize feature modules
+    spa.chat.configModule({
+      set_chat_anchor: setChatAnchor,
+      chat_model: spa.model.chat,
+      people_model: spa.model.people
+    });
+    spa.chat.initModule(jqueryMap.$container);
     // Handle URI anchor change events
     // This is done /after/ all feature modules are configured
     // and initialized, otherwise they will not be ready to handle
@@ -271,9 +315,9 @@ spa.shell = (function () {
     // is considered on-load
     // 绑定hashchange事件处理程序并立即触发它，这样模块在初始加载时就会处理书签
     $(window)
-    	.bind('hashchange', onHashchange)
-    	.trigger('hashchange');
-  };   
+      .bind('hashchange', onHashchange)
+      .trigger('hashchange');
+  };
   // End public method /initModule/
 
   // return public methods
