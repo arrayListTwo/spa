@@ -5,59 +5,63 @@ Root namespace styles
 
 /**Begin reset 重置大多数选择器*/
 * {
-    margin: 0;
-    padding: 0;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 h1, h2, h3, h4, h5, h6, p {
-    margin-bottom: 10px;
+  margin-bottom: 6pt;
+}
+
+ol, ul, dl{
+  list-style-position: inside;
 }
 
 /**End reset*/
 
 /** Begin standard selector 修改标准选择器 */
 body {
-    font: 13px 'Trebuchet MS', Verdana, Helvetica, Arial, sans-serif;
-    color: #444444;
-    background-color: #888888;
+  font: 10pt 'Trebuchet MS', Verdana, Helvetica, Arial, sans-serif;
+  color: #444444;
+  background-color: #888888;
 }
 
 a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 a:link, a:visited {
-    color: inherit;
+  color: inherit;
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 strong {
-    font-weight: 800;
-    color: #000000;
+  font-weight: 800;
+  color: #000000;
 }
 
 /** End standard selectors */
 
 /** Begin spa namespace selector 定义选择器的名字空间，通常使用根名字作为元素选择器*/
 #spa {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    bottom: 8px;
-    right: 8px;
-    min-height: 500px;
-    min-width: 500px;
-    overflow: hidden;
-    background-color: #fff;
-    -webkit-border-radius: 0 8px 0 8px;
-    -moz-border-radius: 0 8px 0 8px;
-    border-radius: 0 8px 0 8px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  min-height: 15em;
+  min-width: 35em;
+  overflow: hidden;
+  background-color: #fff;
+  /*-webkit-border-radius: 0 8px 0 8px;*/
+  /*-moz-border-radius: 0 8px 0 8px;*/
+  /*border-radius: 0 8px 0 8px;*/
 }
 
 /** End spa namespace selector */
@@ -67,13 +71,13 @@ strong {
 }
 
 .spa-x-clearfloat {
-    height: 0;
+  height: 0;
 !important;
-    float: none;
+  float: none;
 !important;
-    visibility: hidden;
+  visibility: hidden;
 !important;
-    clear: both;
+  clear: both;
 !important;
 }
 

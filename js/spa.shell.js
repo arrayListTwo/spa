@@ -37,15 +37,20 @@ spa.shell = (function () {
       chat_extend_height: 450,
       chat_retract_height: 15,
       chat_extended_title: 'Click to retract',
-      chat_retracted_title: 'Click to extend'
+      chat_retracted_title: 'Click to extend',
+
+      resize_interval: 200
     },
     stateMap = {// 共享的动态信息
-      anchor_map: {}
+      $container: undefined,
+      anchor_map: {},
+      // 保存尺寸调整的超时函数ID
+      resize_idto: undefined
     },
     jqueryMap = {}, // jQuery缓存
     copyAnchorMap, setJqueryMap, toggleChat,
     changeAnchorPart, onHashchange,
-    onClickChat, setChatAnchor, initModule;
+    onClickChat, setChatAnchor, initModule, onResize;
 
   // --------------Begin utility methods 所有的私有工具方法聚集区块里面，这些方法不会操作DOM，不需要浏览器就能运行--------------
   // Returns copy of stored anchor map; minimizes overhead
@@ -180,6 +185,22 @@ spa.shell = (function () {
   // --------------End DOM methods--------------
 
   // --------------Begin event handlers 私有的事件处理程序聚集在区块里面--------------
+
+  // Begin Event handler /onResize/
+  onResize = function () {
+    // 只要当前没有尺寸调整计时器再运作，就运行onResize逻辑
+    if (stateMap.resize_idto) {
+      return true;
+    }
+    spa.chat.handleResize();
+    // 计时器
+    stateMap.resize_idto = setTimeout(function () {
+      stateMap.resize_idto = undefined;
+    }, configMap.resize_interval);
+    return true;
+  };
+  // End Evnet handler /onResize/
+
   // Begin Event handler /onHashchange/
   // Purpose : Handles the hashchange event
   // Arguments:
@@ -315,6 +336,7 @@ spa.shell = (function () {
     // is considered on-load
     // 绑定hashchange事件处理程序并立即触发它，这样模块在初始加载时就会处理书签
     $(window)
+      .bind('resize', onResize)
       .bind('hashchange', onHashchange)
       .trigger('hashchange');
   };

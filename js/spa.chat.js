@@ -45,8 +45,10 @@ spa.chat = (function () {
 
       slider_open_time: 250,
       slider_close_time: 250,
-      slider_opened_em: 16,
+      slider_opened_em: 18,
       slider_closed_em: 2,
+      slider_opened_min_em: 10,
+      window_height_min_em: 20,
       slider_opened_title: 'Click to close',
       slider_closed_title: 'Click to open',
 
@@ -64,7 +66,7 @@ spa.chat = (function () {
     },
     jqueryMap = {}, // 缓存jQuery集合
     setJqueryMap, getEmSize, setPxSizes, setSliderPosition, onClickToggle,
-    configModule, initModule;
+    configModule, initModule, removeSlider, handleResize;
   // End module scope variables
 
   // --------------Begin utility methods 所有的私有工具方法聚集区块里面，这些方法不会操作DOM，不需要浏览器就能运行--------------
@@ -96,9 +98,16 @@ spa.chat = (function () {
   // Begin DOM method /setJqueryMap/
   /*计算由该模块管理的元素的尺寸*/
   setPxSizes = function () {
-    var px_per_em, opened_height_em;
+    var px_per_em, window_height_em, opened_height_em;
     px_per_em = getEmSize(jqueryMap.$slider.get(0));
-    opened_height_em = configMap.slider_opened_em;
+    // 计算窗口的高度，单位为em
+    window_height_em = Math.floor(($(window).height() / px_per_em) + 0.5);
+    // 当窗口高度小于阈值，滑块设置为最小高度
+    // 窗口高度大于/等于阈值，滑块设置为正常高度
+    opened_height_em
+      = window_height_em > configMap.window_height_min_em
+      ? configMap.slider_opened_em
+      : configMap.slider_opened_min_em;
     stateMap.px_per_em = px_per_em;
     stateMap.slider_closed_px = configMap.slider_closed_em * px_per_em;
     stateMap.slider_opened_px = opened_height_em * px_per_em;
@@ -223,6 +232,7 @@ spa.chat = (function () {
   // Returns : true on success, false on failure
   // Throws : none
   initModule = function ($append_target) {
+    // 将chat模块添加到shell容器里面
     $append_target.append(configMap.main_html);
     stateMap.$append_target = $append_target;
     setJqueryMap();
@@ -236,11 +246,64 @@ spa.chat = (function () {
   };
   // End public method /initModule/
 
+  // Begin public method /removeSlider/
+  // Purpose:
+  //  * Removes chatSlider DOM element
+  //  * Reverts to initial state
+  //  * Removes pointers to callbacks and other data
+  // Arguments : none
+  // Returns: true
+  // Thorws: none
+  removeSlider = function () {
+    // unwind initialization and state
+    // remove DOM container; this removes event bindings too
+    if (jqueryMap.$slider) {
+      jqueryMap.$slider.remove();
+      jqueryMap = {};
+    }
+    stateMap.$append_target = null;
+    stateMap.position_type = 'closed';
+
+    // unwind key configurations
+    configMap.chat_model = null;
+    configMap.people_model = null;
+    configMap.set_chat_anchor = null;
+    return true;
+  };
+  // End public method /removeSlider/
+
+  // Begin public method /handleResize/
+  // Purpose:
+  //  Given a window resize event, adjust the presentation provided by this module if needed
+  // Actions:
+  // If the window height or width falls below
+  // a given threshold resize the chat slider for the
+  // reduced window size.
+  // Returns: Boolean
+  //  * false - resize not considered
+  //  * true - resize considered
+  // Throws: none
+  handleResize = function () {
+    // don't do anything if we don't have a slider container
+    if (!jqueryMap.$slider) {
+      return false
+    }
+    // 重新计算像素尺寸
+    setPxSizes();
+    if (stateMap.position_type === 'opened') {
+      jqueryMap.$slider.css({height: stateMap.slider_opened_px});
+    }
+    return true;
+  };
+  // End public method /handleResize/
+
   // return public methods
   return {
     setSliderPosition: setSliderPosition,
     configModule: configModule,
-    initModule: initModule
+    initModule: initModule,
+    removeSlider: removeSlider,
+    handleResize: handleResize
   }
   // --------------End public methods--------------
 }());
