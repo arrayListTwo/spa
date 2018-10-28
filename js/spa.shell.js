@@ -10,6 +10,7 @@
 */
 /*global $,spa*/
 spa.shell = (function () {
+  'use strict';
   //---------------- BEGIN MODULE SCOPE VARIABLES --------------
   var
     configMap = { // 静态配置值
@@ -19,9 +20,12 @@ spa.shell = (function () {
       main_html: String()
         + '<!--LOGO 账户设置 搜索框-->'
         + '    <div class="spa-shell-head">'
-        + '        <div class="spa-shell-head-logo"></div>'
+        + '        <div class="spa-shell-head-logo">'
+        + '           <h1>SPA</h1>'
+        + '           <p>javascript end to end</p>'
+        + '        </div>'
         + '        <div class="spa-shell-head-acct"></div>'
-        + '        <div class="spa-shell-head-search"></div>'
+        // + '        <div class="spa-shell-head-search"></div>'
         + '    </div>'
         + '    <!--主容器：导航 content容器-->'
         + '    <div class="spa-shell-main">'
@@ -50,7 +54,8 @@ spa.shell = (function () {
     jqueryMap = {}, // jQuery缓存
     copyAnchorMap, setJqueryMap, toggleChat,
     changeAnchorPart, onHashchange,
-    onClickChat, setChatAnchor, initModule, onResize;
+    onClickChat, setChatAnchor, initModule, onResize,
+    onTapAcct, onLogin, onLogout;
 
   // --------------Begin utility methods 所有的私有工具方法聚集区块里面，这些方法不会操作DOM，不需要浏览器就能运行--------------
   // Returns copy of stored anchor map; minimizes overhead
@@ -65,6 +70,8 @@ spa.shell = (function () {
     var $container = stateMap.$container;
     jqueryMap = {
       $container: $container, // 页面容器缓存
+      $acct: $container.find('.spa-shell-head-acct'),
+      $nav: $container.find('.spa-shell-main-nav')
     };
   };
   // End DOM method / setJqueryMap /
@@ -273,6 +280,29 @@ spa.shell = (function () {
     });
     return false;
   };*/
+  /**
+   * 匿名则登入；
+   * 用户则登出
+   * @param event
+   * @returns {boolean}
+   */
+  onTapAcct = function (event) {
+    var acct_text, user_name, user = spa.model.people.get_user();
+    if (user.get_is_anon()) {
+      user_name = prompt('Please sing-in');
+      spa.model.people.login(user_name);
+      jqueryMap.$acct.text('...processing...');
+    } else {
+      spa.model.people.logout();
+    }
+    return false;
+  };
+  onLogin = function (event, login_user) {
+    jqueryMap.$acct.text(login_user.name);
+  };
+  onLogout = function (evnet, logout_user) {
+    jqueryMap.$acct.text('Please sign-in');
+  };
   // --------------End event handlers--------------
 
   // --------------Begin callbacks--------------
@@ -339,9 +369,13 @@ spa.shell = (function () {
       .bind('resize', onResize)
       .bind('hashchange', onHashchange)
       .trigger('hashchange');
+    $.gevent.subscribe($container, 'spa-login', onLogin);
+    $.gevent.subscribe($container, 'spa-logout', onLogout);
+    jqueryMap.$acct
+      .text('Please sign-in')
+      .bind('utap', onTapAcct);
   };
   // End public method /initModule/
-
   // return public methods
   return {
     initModule: initModule

@@ -16,7 +16,7 @@ h1, h2, h3, h4, h5, h6, p {
   margin-bottom: 6pt;
 }
 
-ol, ul, dl{
+ol, ul, dl {
   list-style-position: inside;
 }
 
