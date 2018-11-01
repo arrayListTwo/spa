@@ -22,12 +22,14 @@ spa.model = (function () {
       // 用来保存pserson对象映射，键为客户端ID
       people_cid_map: {},
       // 保存person对象的TaffyDB集合，初始化为空集合
-      people_db: TAFFY()
+      people_db: TAFFY(),
+      // 用户目前是否在聊天室中
+      is_connected: false
     },
     // 是否使用fake模块
     isFakeData = true,
     personProto, makeCid, clearPeopleDb, completeLogin,
-    makePerson, removePerson, people, initModule;
+    makePerson, removePerson, people, initModule, chat;
 
   // The people object API
   // ----------------------
@@ -157,16 +159,6 @@ spa.model = (function () {
     return true;
   };
 
-  /**
-   * 定义people对象
-   */
-  people = {
-    // 返回person对象的映射，键是客户端ID
-    get_cid_map: function () {
-      return stateMap.people_cid_map;
-    }
-  };
-
   people = (function () {
     var get_by_cid, get_db, get_user, login, logout;
     get_by_cid = function (cid) {
@@ -213,8 +205,110 @@ spa.model = (function () {
       logout: logout
     };
   }());
+
+  // The chat object API
+  //--------------------
+  // The chat object is available at spa.model.chat.
+  // The chat object provides methods and events to manage chat messaging.
+  // Its public methods include:
+  //  * join() - joins the chat room. This routine sets up the chat protocol with
+  //      the backend including publishers for 'spa-listchange' and 'spa-updatechat'
+  //      global custom events. If the current user is anonumous, join() aborts and return false
+  //  * get_chatee() - return the person object with whom the ser is chatting.
+  //      If there is no chatee, null is returned.
+  //  * set_chatee(<person_id>) - set the chatee to the person identified by person_id.
+  //      If the person_id does not exist in the people list, the chatee is set to null.
+  //      If the person requested is already the chatee, it returns false.
+  //      It publishes a 'spa-updatechat' global custom event.
+  //  * send_msg(<msg_text>) - send a message to the chatee. It publishes a 'spa-updatechat'
+  //      global custom event. If the user is anonymous or the cahtee is null, it aborts and
+  //      returns false.
+  //  * update_avatar(<update_avtr_map>) - send the updata_avtr_map to the backend. This results
+  //      in the person list and avatar information (the css_map in the person objects).
+  //      The update_avtr_map must have the form {pserson_id: person_id, css_map: css_map}
+  //
+  // jQuery global custom events published by the object include:
+  //  * spa-setchatee - This is published when a new chatee is set. A map of the form:
+  //    {old_chatee: <old_chatee_person_object>, new_chatee: <new_chatee_person_object>}
+  //    is provided as data.
+  // spa-listchange - This is published when the list of online people changes in length
+  // (i.e. when a person joins or leaves a chat) or when their contents change(i.e. when
+  //    a person's avatar details change). A subscriber to this event should get the people_db
+  //    from the people model for the updated data.
+  //  * spa-updatechat - This is published when a new message is received of send. A map of the form:
+  //    {dest_id: <chatee_id>, dest_name: <chatee_name>, sender_id: <sender_id>, msg_text: <message_content>}
+  //    is provided as data.
+  //
+
+  chat = (function () {
+    var
+      _publish_listchange,
+      _update_list, _leave_chat, join_chat;
+    // Begin internal methods 当接收到新的人员列表时，刷新people对象
+    _update_list = function (arg_list) {
+      var i, person_map, make_person_map,
+        people_list = arg_list[0];
+      clearPeopleDb();
+      PERSON:
+        for (i = 0; i < people_list.length; i++) {
+          person_map = people_list[i];
+          if (!person_map.name) {
+            continue PERSON;
+          }
+          // if user defined, update css_map and skip remainder
+          if (stateMap.user && stateMap.user.id === person_map._id) {
+            stateMap.user.css_map = person_map.css_map;
+            continue PERSON;
+          }
+          make_person_map = {
+            cid: person_map._id,
+            css_map: person_map.css_map,
+            id: person_map._id,
+            name: person_map.name
+          };
+          makePerson(make_person_map);
+        }
+      stateMap.people_db.sort('name');
+    };
+    // 发布‘spa-listchange’全局事件，携带的数据时更新的人员列表。
+    // 每当接收到来自后端的listchange消息时，我们会使用这个方法
+    _publish_listchange = function (arg_list) {
+      _update_list(arg_list);
+      $.gevent.publish('spa-listchange', [arg_list]);
+    };
+    // End internal methods
+    // 向后端发送leavechat消息，并清理状态变量
+    _leave_chat = function () {
+      var sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+      stateMap.is_connected = false;
+      if (sio) {
+        sio.emit('leavechat');
+      }
+    };
+    // 加入聊天室
+    // 会检查用户是否已经加入了聊天室，避免多次注册listchange回调函数
+    join_chat = function () {
+      var sio;
+      if (stateMap.is_connected) {
+        return false;
+      }
+      if (stateMap.user.get_is_anon()) {
+        console.warn('User must be defined before joining chat');
+        return false;
+      }
+      sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+      sio.on('listchange', _publish_listchange);
+      stateMap.is_connected = true;
+      return true;
+    };
+    return {
+      _leave: _leave_chat,
+      join: join_chat
+    }
+  }());
+
   initModule = function () {
-    var i, people_list, person_map;
+    // var i, people_list, person_map;
     // initialize anonymous person 初始化一个匿名用户
     stateMap.anon_user = makePerson({
       cid: configMap.anon_id,
@@ -222,7 +316,7 @@ spa.model = (function () {
       name: 'anonymous'
     });
     stateMap.user = stateMap.anon_user;
-    if (isFakeData) {
+    /* if (isFakeData) {
       people_list = spa.fake.getPeopleList();
       for (i = 0; i < people_list.length; i++) {
         person_map = people_list[i];
@@ -234,10 +328,11 @@ spa.model = (function () {
         })
         ;
       }
-    }
+    }*/
   };
   return {
     initModule: initModule,
+    chat: chat,
     people: people
   };
 }());
