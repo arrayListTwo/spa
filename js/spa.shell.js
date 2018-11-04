@@ -371,9 +371,10 @@ spa.shell = (function () {
       .trigger('hashchange');
     $.gevent.subscribe($container, 'spa-login', onLogin);
     $.gevent.subscribe($container, 'spa-logout', onLogout);
+    // 绑定触摸-鼠标事件
     jqueryMap.$acct
       .text('Please sign-in')
-      .bind('utap', onTapAcct);
+      .on('utap', onTapAcct);
   };
   // End public method /initModule/
   // return public methods

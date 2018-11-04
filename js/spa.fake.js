@@ -5,7 +5,7 @@
 /*jslint         browser : true, continue : true,
         devel  : true, indent  : 2,    maxerr   : 50,
         newcap : true, nomen   : true, plusplus : true,
-        regexp : true, sloppy  : true, vars     : true,
+        regexp : true, sloppy  : true, vars     : false,
         white  : true
       */
 
@@ -154,7 +154,8 @@ spa.fake = function () {
         send_listchange();
       }
     };
-    //
+    // 发送模拟消息，当用户登入并设置了updatechat函数时，消息才可以发送成功
+    // 成功后，消息就不会再次发出
     emit_mock_msg = function () {
       setTimeout(function () {
         var user = spa.model.people.get_user();

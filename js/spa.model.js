@@ -5,7 +5,7 @@
 /*jslint         browser : true, continue : true,
         devel  : true, indent  : 2,    maxerr   : 50,
         newcap : true, nomen   : true, plusplus : true,
-        regexp : true, sloppy  : true, vars     : true,
+        regexp : true, sloppy  : true, vars     : false,
         white  : true
       */
 /*global $,spa*/
@@ -23,6 +23,8 @@ spa.model = (function () {
       people_cid_map: {},
       // 保存person对象的TaffyDB集合，初始化为空集合
       people_db: TAFFY(),
+      // 当前用户person对象
+      user: null,
       // 用户目前是否在聊天室中
       is_connected: false
     },
@@ -113,6 +115,7 @@ spa.model = (function () {
     // 登录完成，自动加入聊天室
     chat.join();
     // When we add chat, we should join here
+    // 发布'spa-login'事件
     $.gevent.publish('spa-login', [stateMap.user]);
   };
 
@@ -144,7 +147,7 @@ spa.model = (function () {
   };
 
   /**
-   * 从人员列表中移除person对象
+   * TODO 待测试 从人员列表中移除person对象
    */
   removePerson = function (person) {
     if (!person) {
@@ -198,6 +201,7 @@ spa.model = (function () {
       // when we add chat, we should leave the chatroom here
       is_removed = removePerson(user);
       stateMap.user = stateMap.anon_user;
+      // 发布'spa-logout'事件
       $.gevent.publish('spa-logout', [user]);
       return is_removed;
     };
@@ -249,6 +253,7 @@ spa.model = (function () {
       _publish_listchange, _publish_updatechat,
       _update_list, _leave_chat,
       get_chatee, join_chat, send_msg, set_chatee,
+      // 听者
       chatee = null;
     // Begin internal methods 当接收到新的人员列表时，刷新people对象
     _update_list = function (arg_list) {
@@ -330,6 +335,7 @@ spa.model = (function () {
         return false;
       }
       sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+      // 监听在线人员列表发生变化
       sio.on('listchange', _publish_listchange);
       // 处理从后端接收到的'updatechat'消息，每当接收到消息，就会发布'spa-updatechat'事件
       sio.on('updatechat', _publish_updatechat);
@@ -364,7 +370,7 @@ spa.model = (function () {
       var new_chatee;
       new_chatee = stateMap.people_cid_map[person_id];
       if (new_chatee) {
-        // 如果传入的chatee和当前一样，则立即返回
+        // 如果传入的听者(chatee)和当前听者一样，则立即返回
         if (chatee && chatee.id === new_chatee.id) {
           return false;
         }
