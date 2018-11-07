@@ -20,6 +20,25 @@ ol, ul, dl {
   list-style-position: inside;
 }
 
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  user-drap: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, .spa-x-user-select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 /**End reset*/
 
 /** Begin standard selector 修改标准选择器 */

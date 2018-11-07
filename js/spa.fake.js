@@ -117,7 +117,7 @@ spa.fake = function () {
     emit_sio = function (msg_type, data) {
       // respond to 'adduser' event with 'userupdata'
       // callback after a 3s delay
-      var person_map;
+      var person_map, i;
       if (msg_type === 'adduser' && callback_map.userupdate) {
         setTimeout(function () {
           person_map = {
@@ -153,8 +153,22 @@ spa.fake = function () {
         }
         send_listchange();
       }
+      // updateavatar消息的处理程序
+      if (msg_type === 'updateavatar' && callback_map.listchange) {
+        // simulate receipt of 'listchange' message
+        for (i = 0; i < peopleList.length; i++) {
+          // 查找person对象，更改css_map属性
+          if (peopleList[i]._id === data.person_id) {
+            peopleList[i].css_map = data.css_map;
+            break;
+          }
+        }
+        // 执行注册了listchange消息的回调函数
+        callback_map.listchange([peopleList]);
+      }
     };
     // 发送模拟消息，当用户登入并设置了updatechat函数时，消息才可以发送成功
+    // 听者是登录成功的人；发送者默认为‘id_04’
     // 成功后，消息就不会再次发出
     emit_mock_msg = function () {
       setTimeout(function () {

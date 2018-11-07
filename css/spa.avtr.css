@@ -2,3 +2,38 @@
  * spa.avtr.css
  * Avatar feature styles
  */
+.spa-avtr-box {
+  position: absolute;
+  width: 62px;
+  padding: 0 4px;
+  height: 40px;
+  line-height: 32px;
+  border: 4px solid #aaa;
+  cursor: pointer;
+  /*overflow: hidden;
+  -ms-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  可以优雅的截断长文本*/
+  overflow: hidden;
+  -ms-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.spa-avtr-box.spa-x-is-user {
+  border-color: #44f;
+}
+
+.spa-avtr-box.spa-x-is-chatee {
+  border-color: #080
+}
+
+.spa-avtr-box.spa-x-is-drag {
+  cursor: pointer;
+  color: #fff;
+  background-color: #000;
+  border-color: #800;
+}

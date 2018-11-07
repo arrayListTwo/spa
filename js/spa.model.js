@@ -201,6 +201,8 @@ spa.model = (function () {
       // when we add chat, we should leave the chatroom here
       is_removed = removePerson(user);
       stateMap.user = stateMap.anon_user;
+      // 清除Taffy人员集合
+      clearPeopleDb();
       // 发布'spa-logout'事件
       $.gevent.publish('spa-logout', [user]);
       return is_removed;
@@ -252,16 +254,15 @@ spa.model = (function () {
     var
       _publish_listchange, _publish_updatechat,
       _update_list, _leave_chat,
-      get_chatee, join_chat, send_msg, set_chatee,
+      get_chatee, join_chat, send_msg, set_chatee, update_avatar,
       // 听者
       chatee = null;
     // Begin internal methods 当接收到新的人员列表时，刷新people对象
     _update_list = function (arg_list) {
-      var i, person_map, make_person_map,
+      var i, person_map, make_person_map, person,
         people_list = arg_list[0],
         // 添加标志
         is_chatee_online = false;
-      // TODO 为什么清空？
       clearPeopleDb();
       PERSON:
         for (i = 0; i < people_list.length; i++) {
@@ -280,11 +281,13 @@ spa.model = (function () {
             id: person_map._id,
             name: person_map.name
           };
+          // 将makeperson的结果赋给person对象
+          person = makePerson(make_person_map);
           // 如果chatee人员对象在更新后的用户列表中，则设置标志位位true
           if (chatee && chatee.id === make_person_map.id) {
             is_chatee_online = true;
+            chatee = person;
           }
-          makePerson(make_person_map);
         }
       stateMap.people_db.sort('name');
       // 如果chatee人员对象不再更新的用户列表中，则将之设置为空
@@ -381,12 +384,21 @@ spa.model = (function () {
       chatee = new_chatee;
       return true;
     };
+    // update_avatar方法，向后端发送updateavatar消息，携带的数据时一个映射
+    update_avatar = function (avatar_update_map) {
+      var sio = isFakeData ? spa.fake.mockSio : spa.data.getSio();
+      if (sio) {
+        sio.emit('updateavatar', avatar_update_map);
+      }
+    }
+    ;
     return {
       _leave: _leave_chat,
       get_chatee: get_chatee,
       join: join_chat,
       send_msg: send_msg,
-      set_chatee: set_chatee
+      set_chatee: set_chatee,
+      update_avatar: update_avatar
     }
   }());
 
