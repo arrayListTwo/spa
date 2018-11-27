@@ -29,7 +29,7 @@ spa.model = (function () {
       is_connected: false
     },
     // 是否使用fake模块
-    isFakeData = true,
+    isFakeData = false,
     personProto, makeCid, clearPeopleDb, completeLogin,
     makePerson, removePerson, people, initModule, chat;
 
