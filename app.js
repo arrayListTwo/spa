@@ -16,7 +16,11 @@ var
   express = require('express'),
   routes = require('./lib/routes'),
   app = express(),
-  server = http.createServer(app);
+  server = app.listen(80, '0.0.0.0', function () {
+    var host = server.address().address;
+    var port = server.address().port;
+    console.log('running at http://' + host + ':' + port)
+  });
 // -----End module scrope variables -----
 // -----Begin server configuration -----
 // 在每个环境中添加中间件
@@ -45,7 +49,7 @@ app.configure('production', function () {
 routes.configRoutes(app, server);
 
 // Begin start server -----
-server.listen(3000);
-console.log('Express server Listening on port %d in %s mode',
-  server.address().port, app.settings.env);
+// server.listen(3000);
+// console.log('Express server Listening on port %d in %s mode',
+//   server.address().port, app.settings.env);
 // End start server
